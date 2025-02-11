@@ -4,6 +4,7 @@ from peewee import (
     CharField,
     DateTimeField,
     ForeignKeyField,
+    BooleanField,
 )
 
 db = SqliteDatabase("db.sqlite3")
@@ -27,6 +28,7 @@ class Task(baseModel):
     title = CharField()
     description = CharField()
     datetime = DateTimeField()
+    is_done = BooleanField(default=False)
 
     class Meta:
         database = db

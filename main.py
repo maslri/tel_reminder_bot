@@ -27,7 +27,7 @@ async def add_task(event):
     for i in text.split("\n"):
         if len(i) > 0:
             result.append(i)
-    title = result.pop(0).replace("/add", "").strip()
+    title = result.pop(0).replace("/add", "", 1).strip()
     date = datetime.strptime(result.pop(-1), "%Y:%m:%d %H:%M")
     description = "\n".join(result)
 
@@ -42,7 +42,7 @@ async def add_task(event):
 @client.on(events.NewMessage(pattern="/list"))
 async def list_task(event):
     sender = await event.get_sender()
-    tasks = Task.select().where(Task.user == sender.id)
+    tasks = Task.select().where(Task.user == sender.id, ~Task.is_done)
     response_text = []
     for task in tasks:
         response_text.append(f"Task id {task.id} => {task.title} - {task.datetime}\n\n")
@@ -50,6 +50,15 @@ async def list_task(event):
         "for remove or update task use /remove or /update with task id fron of them example: /remove 1"
     )
     await event.reply("".join(response_text))
+
+
+@client.on(events.NewMessage(pattern="/remove"))
+async def remove_task(event):
+    task_id = event.raw_text.replace("/remove", "", 1).strip()
+    sender = await event.get_sender()
+    task = Task.get(Task.user == sender.id, Task.id == task_id)
+    task.delete_instance()
+    await event.reply(f"Task id {task_id} is removed")
 
 
 client.run_until_disconnected()
