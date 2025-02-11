@@ -15,7 +15,7 @@ YYYY-MM-DD HH:MM
 
 Example:
 
-Develope Bank Backedn
+/add Develope Bank Backedn
 
 Develop the backed and hack them later
 qith a backdoor inside it.
