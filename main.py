@@ -42,12 +42,17 @@ async def add_task(event):
 @client.on(events.NewMessage(pattern="/list"))
 async def list_task(event):
     sender = await event.get_sender()
-    tasks = Task.select().where(Task.user == sender.id, ~Task.is_done)
+    tasks = Task.select().where(Task.user == sender.id)
+    # tasks = Task.select().where(Task.user == sender.id, ~Task.is_done)
     response_text = []
     for task in tasks:
-        response_text.append(f"Task id {task.id} => {task.title} - {task.datetime}\n\n")
+        response_text.append(
+            f"Task id {task.id} \n=> {task.title} - {task.datetime} \n"
+            f"==> Status: {task.is_done}\n\n"
+        )
     response_text.append(
-        "for remove or update task use /remove or /update with task id fron of them example: /remove 1"
+        "for remove or update task use /remove or /update with task id "
+        "fron of them example: /remove 1"
     )
     await event.reply("".join(response_text))
 
@@ -59,6 +64,40 @@ async def remove_task(event):
     task = Task.get(Task.user == sender.id, Task.id == task_id)
     task.delete_instance()
     await event.reply(f"Task id {task_id} is removed")
+
+
+@client.on(events.NewMessage(pattern="/update"))
+async def update_task(event):
+    sender = await event.get_sender()
+    text = event.raw_text
+    task_id = text.split(" ")[1]
+
+    result = []
+    for i in text.split("\n"):
+        if len(i) > 0:
+            result.append(i)
+    title = result.pop(0).replace("/update", "", 1)
+    title = title.replace(str(task_id), "").strip()
+    date = datetime.strptime(result.pop(-1).strip(), "%Y:%m:%d %H:%M")
+    description = "\n".join(result)
+
+    task = Task.get(Task.user == sender.id, Task.id == task_id)
+    task.title = title
+    task.datetime = date
+    task.description = description
+    task.is_done = False
+    task.save()
+    await event.reply(f"Task id {task_id} is updated")
+
+
+@client.on(events.NewMessage(pattern="/is_done"))
+async def is_done(event):
+    task_id = event.raw_text.replace("/is_done", "", 1).strip()
+    sender = await event.get_sender()
+    task = Task.get(Task.user == sender.id, Task.id == task_id)
+    task.is_done = True
+    task.save()
+    await event.reply(f"Task id {task_id} is done")
 
 
 client.run_until_disconnected()
