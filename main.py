@@ -1,6 +1,6 @@
 from telethon.sync import TelegramClient, events
 from utils import get_started_test
-from databate import User
+from databate import User, Task
 from datetime import datetime
 
 api_id = 17349
@@ -15,9 +15,7 @@ async def handler(event):
     user_id = sender.id
     user_first_name = sender.first_name
     user_last_name = sender.last_name
-    User.get_or_create(
-        name=user_first_name + " " + user_last_name, user_id=user_id
-    )
+    User.get_or_create(name=user_first_name + " " + user_last_name, user_id=user_id)
     await event.reply(get_started_test(user_first_name, user_last_name))
 
 
@@ -33,9 +31,25 @@ async def add_task(event):
     date = datetime.strptime(result.pop(-1), "%Y:%m:%d %H:%M")
     description = "\n".join(result)
 
-    await event.reply(
-        f"Title: {title}\n\nDescription: {description}\n\nDate: {date}"
+    sender = await event.get_sender()
+    task = Task.create(
+        user=sender.id, title=title, description=description, datetime=date
     )
+    response_test = f"the {title} is created whose ID is = {task}"
+    await event.reply(response_test)
+
+
+@client.on(events.NewMessage(pattern="/list"))
+async def list_task(event):
+    sender = await event.get_sender()
+    tasks = Task.select().where(Task.user == sender.id)
+    response_text = []
+    for task in tasks:
+        response_text.append(f"Task id {task.id} => {task.title} - {task.datetime}\n\n")
+    response_text.append(
+        "for remove or update task use /remove or /update with task id fron of them example: /remove 1"
+    )
+    await event.reply("".join(response_text))
 
 
 client.run_until_disconnected()
